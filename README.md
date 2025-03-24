@@ -2,8 +2,8 @@
 
 This repository contains a tutorial for the 6-node quadratic triangle finite element (`D2_nn6_tri`).
 
-📘 **Interactive Tutorial:**  
-➡️ [Open the Jupyter Notebook](tutorial_D2_nn6_tri.ipynb)
+**Interactive Tutorial:**  
+[Open the Jupyter Notebook](tutorials/tutorial_D2_nn6_tri.ipynb)
 
 ---
 
