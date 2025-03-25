@@ -15,4 +15,4 @@ This repository contains a tutorial for the 6-node quadratic triangle finite ele
 ## How to Use
 1. Clone the repo
 2. Open the `.ipynb` file in VS Code or Jupyter
-3. Run cells and follow the tutorial!
+3. Run cells and follow the tutorial
