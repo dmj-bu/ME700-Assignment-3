@@ -1261,7 +1261,7 @@ def test_shape_function_derivative_symmetry_2d_quad(num_pts, shape_function_dxi,
     (di.get_face_nodes_D1_nn2, 0, [0]),
     (di.get_face_nodes_D1_nn2, 1, [1]),
     (di.get_face_nodes_D1_nn3, 0, [0]),
-    (di.get_face_nodes_D1_nn3, 1, [2]),
+    (di.get_face_nodes_D1_nn3, 1, [1]),
     # 2D Triangular Elements
     (di.get_face_nodes_D2_nn3_tri, 0, [0, 1]),
     (di.get_face_nodes_D2_nn3_tri, 1, [1, 2]),
