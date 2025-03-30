@@ -80,7 +80,7 @@ $$
 \nabla \cdot \mathbf{P} = \mathbf{0} \quad \text{in } \Omega
 $$
 
-where ${P}$ is the first Piola-Kirchhoff stress tensor, and $ \Omega $ is the domain.
+where ${P}$ is the first Piola-Kirchhoff stress tensor, and $\Omega$ is the domain.
 
 **Why:** For hyperelastic materials, the stress derives from a strain energy function. We seek displacement fields ${u}$ such that internal elastic forces balance applied loads.
 
@@ -92,9 +92,8 @@ $$
 
 This leads to the nonlinear residual:
 
-$$
-\ {R}({u}) = {f}_{{ext}} - {f}_{{int}}({u})
-$$
+$$ \mathbf{R}(\mathbf{u}) = \mathbf{f}_{\text{ext}} - \mathbf{f}_{\text{int}}(\mathbf{u}) $$
+
 
 ### Newton-Raphson Method
 
