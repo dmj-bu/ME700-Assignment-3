@@ -91,12 +91,7 @@ $$
 $$
 
 This leads to the nonlinear residual:
-
-$$ 
-\mathbf{R}(\mathbf{u}) = \mathbf{f}_{\text{ext}} - \mathbf{f}_{\text{int}}(\mathbf{u}) 
-$$
-
-
+$$ \mathbf{R}(\mathbf{u}) = \mathbf{f}_{\text{ext}} - \mathbf{f}_{\text{int}}(\mathbf{u}) $$
 ### Newton-Raphson Method
 
 To solve ${R}({u}) = 0$, use:
