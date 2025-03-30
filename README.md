@@ -93,7 +93,7 @@ $$
 This leads to the nonlinear residual:
 
 $$
-\mathbf{R}(\mathbf{u}) = \mathbf{f}_{ext} - \mathbf{f}_{int}(\mathbf{u})
+{R}({u}) = {f}_{ext} - {f}_{int}({u})
 $$
 
 ### Newton-Raphson Method
