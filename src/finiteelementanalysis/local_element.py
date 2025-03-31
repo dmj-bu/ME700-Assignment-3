@@ -1,6 +1,6 @@
-
 from finiteelementanalysis import discretization as di
 import numpy as np
+from numba import njit
 
 
 def element_residual(ele_type, coords, materialprops, displacement):
@@ -249,7 +249,7 @@ def element_stiffness(ele_type: str, material_props, coords: np.ndarray, displac
         nelnodes (int): Number of nodes per element.
         elident (int): Element identifier (not used here).
         coords (np.ndarray): (ncoord, nelnodes) array of node coordinates.
-        material_props (tuple): Tuple containing material properties (e.g., mu, kappa).
+        material_props numpy array containing material properties (e.g., mu, kappa).
         displacement (np.ndarray): (ndof, nelnodes) array of nodal displacements.
 
     Returns:
@@ -334,6 +334,7 @@ def convert_to_spatial_derivatives(dNdx, Finv):
     return dNdx @ Finv
 
 
+@njit
 def material_stiffness_2d(B, J, materialprops):
     """
     Compute the 4th-order material stiffness tensor C_{ijkl} for plane strain
@@ -351,7 +352,7 @@ def material_stiffness_2d(B, J, materialprops):
         The determinant of the deformation gradient (i.e., the volume change).
         Although J is strictly the volume ratio, for plane strain it is treated
         consistently in this 2D formulation.
-    materialprops : array_like (length: 2)
+    materialprops : array (length: 2)
         Material properties array containing:
           - mu1 (float): Shear modulus-like parameter.
           - K1 (float): Bulk modulus-like parameter.
@@ -399,6 +400,7 @@ def material_stiffness_2d(B, J, materialprops):
     return C
 
 
+@njit
 def kirchhoff_stress(B, J, materialprops):
     """
     Compute the Kirchhoff (or Cauchy-like) stress tensor given the left 
@@ -467,6 +469,7 @@ def kirchhoff_stress(B, J, materialprops):
     return stress
 
 
+@njit
 def compute_stiffness_contributions(nelnodes, ndof, ncoord, stress, dsde, dNdxs):
     """
     Computes contributions to the element stiffness matrix.

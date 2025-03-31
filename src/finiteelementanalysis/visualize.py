@@ -110,6 +110,10 @@ def make_deformation_gif(displacements_all, coords, connect, ele_type, gif_path,
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
 
+    # Compute global maximum displacement magnitude
+    disp_mags = np.linalg.norm(disp_stack, axis=2)
+    max_disp_mag = disp_mags.max()
+
     # Plot undeformed mesh in light gray
     for element in connect:
         if ele_type == "D2_nn3_tri":
@@ -134,12 +138,13 @@ def make_deformation_gif(displacements_all, coords, connect, ele_type, gif_path,
             line, = ax.plot([], [], color='black', lw=1.5)
             mesh_lines.append((element[edge[0]], element[edge[1]], line))
 
-    scatter = ax.scatter([], [], c=[], cmap='coolwarm', s=20, edgecolors='k', linewidths=0.3, zorder=3)
+    scatter = ax.scatter([], [], c=[], cmap='coolwarm', vmin=0, vmax=max_disp_mag,
+                         s=20, edgecolors='k', linewidths=0.3, zorder=3)
     cbar = plt.colorbar(scatter, ax=ax, label="Displacement Magnitude", fraction=0.046, pad=0.04)
 
     ax.set_xlabel("X Coordinate", fontsize=12)
     ax.set_ylabel("Y Coordinate", fontsize=12)
-    ax.set_title(f"Initial and Deformed Mesh for {ele_type}", fontsize=14, fontweight='bold')
+    title_text = ax.set_title("", fontsize=14, fontweight='bold')
 
     def update(frame_idx):
         disp_flat = displacements_all[frame_idx]
@@ -152,7 +157,9 @@ def make_deformation_gif(displacements_all, coords, connect, ele_type, gif_path,
 
         scatter.set_offsets(coords_def)
         scatter.set_array(disp_mag)
-        return [line for _, _, line in mesh_lines] + [scatter]
+
+        title_text.set_text(f"{ele_type}  |  Frame {frame_idx + 1} of {len(displacements_all)}")
+        return [line for _, _, line in mesh_lines] + [scatter, title_text]
 
     ani = animation.FuncAnimation(fig, update, frames=len(displacements_all), interval=interval, blit=True)
     gif_path = Path(gif_path)

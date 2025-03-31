@@ -1,6 +1,7 @@
 from finiteelementanalysis import discretization as di
 from finiteelementanalysis import local_element as loc_el
 import numpy as np
+from scipy.sparse import coo_matrix
 
 
 def global_stiffness(
@@ -51,46 +52,158 @@ def global_stiffness(
       the global arrays and passed to `element_stiffness` for each element.
     """
 
-    # Retrieve key element info: ncoord, ndof, nelnodes
     ncoord, ndof, nelnodes = di.element_info(ele_type)
+    nnode = coords.shape[1]
+    nelem = connect.shape[1]
+    K_global = np.zeros((ndof * nnode, ndof * nnode))
 
-    # Number of global nodes and elements
+    for e in range(nelem):
+        node_indices = connect[:, e]
+        ele_coords = coords[:, node_indices]         # shape: (ncoord, nelnodes)
+        ele_disp = displacement[:, node_indices]     # shape: (ndof, nelnodes)
+
+        k_element = loc_el.element_stiffness(ele_type, material_props, ele_coords, ele_disp)
+
+        # Compute global DOF indices for the element
+        dof_indices = np.ravel([ndof * node + np.arange(ndof) for node in node_indices])
+
+        for a in range(nelnodes * ndof):
+            for b in range(nelnodes * ndof):
+                K_global[dof_indices[a], dof_indices[b]] += k_element[a, b]
+
+    return K_global
+
+
+##############################################################################
+# OLD VERSION OF THE FUNCTION THAT IS NOT VECTORIZED
+##############################################################################
+# def global_stiffness(
+#     ele_type: str,
+#     coords: np.ndarray,
+#     connect: np.ndarray,
+#     material_props: list,
+#     displacement: np.ndarray
+# ):
+#     # Retrieve key element info: ncoord, ndof, nelnodes
+#     ncoord, ndof, nelnodes = di.element_info(ele_type)
+
+#     # Number of global nodes and elements
+#     nnode = coords.shape[1]
+#     nelem = connect.shape[1]
+
+#     # Allocate the global stiffness matrix
+#     K_global = np.zeros((ndof * nnode, ndof * nnode))
+
+#     # Loop over elements
+#     for e in range(nelem):
+#         # Temporary arrays for local coordinates (shape=(ncoord, nelnodes))
+#         # and local displacement (shape=(ndof*nelnodes, 1))
+#         ele_coords = np.zeros((ncoord, nelnodes))
+#         ele_disp = np.zeros((ndof, nelnodes))
+
+#         # Gather local node coordinates and local displacements
+#         for a in range(nelnodes):
+#             global_node = connect[a, e]  # 0-based index
+#             for i in range(ncoord):
+#                 ele_coords[i, a] = coords[i, global_node]
+#             for i in range(ndof):
+#                 ele_disp[i, a] = displacement[i, global_node]
+
+#         # Compute the element stiffness matrix
+#         k_element = loc_el.element_stiffness(ele_type, material_props, ele_coords, ele_disp)
+
+#         # Assemble into the global matrix
+#         for a in range(nelnodes):
+#             global_node_a = connect[a, e]
+#             for i in range(ndof):
+#                 row = ndof * global_node_a + i
+#                 for b in range(nelnodes):
+#                     global_node_b = connect[b, e]
+#                     for k in range(ndof):
+#                         col = ndof * global_node_b + k
+#                         K_global[row, col] += k_element[ndof * a + i, ndof * b + k]
+
+#     return K_global
+
+
+def global_stiffness_sparse(
+    ele_type: str,
+    coords: np.ndarray,
+    connect: np.ndarray,
+    material_props: list,
+    displacement: np.ndarray
+):
+    """
+    Assemble the global stiffness matrix for a finite element model.
+
+    The function infers the dimensionality (ncoord), the number of degrees of
+    freedom per node (ndof), and the number of local element nodes (nelnodes)
+    from the element type, then loops over all elements to form and accumulate
+    each element's stiffness contribution into a global stiffness matrix.
+
+    Parameters
+    ----------
+    ele_type : str
+        The element type identifier (e.g., 'D3_nn8_hex'). Used to look up
+        dimension, DOFs, local node count, etc.
+    coords : numpy.ndarray of shape (ncoord, nnode)
+        Global coordinates of all nodes. coords[i, a] is the i-th coordinate of
+        node a (0-based). The number of columns, nnode, is the total number of
+        nodes in the mesh.
+    connect : numpy.ndarray of shape (nelnodes, nelem)
+        Element connectivity array, where connect[a, e] is the global node index
+        of the a-th local node of the e-th element. Assumed to be 0-based 
+        indexing.
+    material_props : list
+        Material property array, e.g., for a Neo-Hookean model [mu, bulk_modulus].
+    displacement : numpy.ndarray of shape (ndof, nnode)
+        The global displacement vector, matching the format of coords.
+
+    Returns
+    -------
+    K_global : numpy.ndarray of shape (ndof*nnode, ndof*nnode)
+        The assembled global stiffness matrix.
+
+    Notes
+    -----
+    - Each element's stiffness matrix is computed by a local function
+      (here called `element_stiffness`), then added into `K_global`.
+    - The mesh size (nnode, nelem) is inferred from `coords.shape[1]` and
+      `connect.shape[1]`, respectively.
+    - The local node coordinates and local displacement are extracted from
+      the global arrays and passed to `element_stiffness` for each element.
+    """
+    ncoord, ndof, nelnodes = di.element_info(ele_type)
     nnode = coords.shape[1]
     nelem = connect.shape[1]
 
-    # Allocate the global stiffness matrix
-    K_global = np.zeros((ndof * nnode, ndof * nnode))
+    # Preallocate lists for COO format (i, j, val)
+    row_inds = []
+    col_inds = []
+    data_vals = []
 
-    # Temporary arrays for local coordinates (shape=(ncoord, nelnodes))
-    # and local displacement (shape=(ndof*nelnodes, 1))
-    ele_coords = np.zeros((ncoord, nelnodes))
-    ele_disp = np.zeros((ndof, nelnodes))
-
-    # Loop over elements
     for e in range(nelem):
-        # Gather local node coordinates and local displacements
-        for a in range(nelnodes):
-            global_node = connect[a, e]  # 0-based index
-            for i in range(ncoord):
-                ele_coords[i, a] = coords[i, global_node]
-            for i in range(ndof):
-                ele_disp[i, a] = displacement[i, global_node]
+        node_indices = connect[:, e]  # shape: (nelnodes,)
+        ele_coords = coords[:, node_indices]         # (ncoord, nelnodes)
+        ele_disp = displacement[:, node_indices]     # (ndof, nelnodes)
 
-        # Compute the element stiffness matrix
         k_element = loc_el.element_stiffness(ele_type, material_props, ele_coords, ele_disp)
 
-        # Assemble into the global matrix
-        for a in range(nelnodes):
-            global_node_a = connect[a, e]
-            for i in range(ndof):
-                row = ndof * global_node_a + i
-                for b in range(nelnodes):
-                    global_node_b = connect[b, e]
-                    for k in range(ndof):
-                        col = ndof * global_node_b + k
-                        K_global[row, col] += k_element[ndof * a + i, ndof * b + k]
+        # Flattened global DOF indices for this element
+        dof_indices = np.ravel([ndof * node + np.arange(ndof) for node in node_indices])
 
-    return K_global
+        # Assemble element stiffness into global sparse matrix data
+        for a in range(nelnodes * ndof):
+            for b in range(nelnodes * ndof):
+                row_inds.append(dof_indices[a])
+                col_inds.append(dof_indices[b])
+                data_vals.append(k_element[a, b])
+
+    # Assemble global sparse stiffness matrix
+    K_global_sparse = coo_matrix((data_vals, (row_inds, col_inds)),
+                                 shape=(ndof * nnode, ndof * nnode))
+
+    return K_global_sparse
 
 
 def global_traction(
@@ -157,12 +270,12 @@ def global_traction(
     nnodes = coords.shape[1]
     F_global = np.zeros(ndof * nnodes)
 
-    # Temporary array for traction
-    traction_vec = np.zeros(ndof)
 
     # Loop over each prescribed load
     ndload = dload_info.shape[1]
     for load_idx in range(ndload):
+        # Temporary array for traction
+        traction_vec = np.zeros(ndof)
         # Extract element index and face ID from dload_info
         element_idx = int(dload_info[0, load_idx])
         face = int(dload_info[1, load_idx])
@@ -264,11 +377,11 @@ def global_residual(
     # Initialize the global residual vector
     R_global = np.zeros(ndof * nnode)
  
-    # Temporary arrays for local coordinates and local displacements
-    element_coord = np.zeros((ncoord, nelnodes))
-    element_disp = np.zeros((ndof, nelnodes))
     # Loop over all elements
     for e in range(nelem):
+        # Temporary arrays for local coordinates and local displacements
+        element_coord = np.zeros((ncoord, nelnodes))
+        element_disp = np.zeros((ndof, nelnodes))
         # Gather local node coordinates and local displacements
         for a in range(nelnodes):
             global_node = connect[a, e]

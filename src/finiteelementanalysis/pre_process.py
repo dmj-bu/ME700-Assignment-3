@@ -1,5 +1,8 @@
 import gmsh
+from itertools import combinations
 import numpy as np
+import scipy.sparse as sp
+from scipy.sparse.csgraph import reverse_cuthill_mckee
 
 
 def generate_rect_mesh_2d(

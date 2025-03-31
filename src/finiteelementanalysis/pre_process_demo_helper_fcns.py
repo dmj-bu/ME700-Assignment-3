@@ -754,4 +754,3 @@ def plot_element_quality_histograms(
     plt.savefig(fname, bbox_inches='tight', pad_inches=0.1)
     plt.close()
     return
-

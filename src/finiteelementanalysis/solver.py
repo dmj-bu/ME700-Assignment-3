@@ -1,6 +1,8 @@
 import numpy as np
 from finiteelementanalysis import assemble_global as assemble
 from finiteelementanalysis import discretization as di
+import scipy.sparse as sp
+import scipy.sparse.linalg as spla
 
 
 def hyperelastic_solver(
@@ -13,7 +15,8 @@ def hyperelastic_solver(
     nr_print: bool = False,
     nr_num_steps: int = 5,
     nr_tol: float = 1e-9,
-    nr_maxit: int = 30
+    nr_maxit: int = 30,
+    matrix_solve_sparse: bool = True,
 ) -> list[np.ndarray]:
     """
     Solve a hyperelastic finite element problem using a Newton–Raphson scheme
@@ -125,7 +128,12 @@ def hyperelastic_solver(
                 K[bc_dof, bc_dof] = 1.0
                 R[bc_dof] = loadfactor * fixed_nodes[2, n] - displacement[bc_dof]
 
-            d_displacement = np.linalg.solve(K, R)
+            if matrix_solve_sparse:
+                K_sparse = sp.csr_matrix(K)
+                d_displacement = spla.spsolve(K_sparse, R)
+            else:
+                d_displacement = np.linalg.solve(K, R)
+
             displacement += d_displacement 
 
             wnorm = np.dot(displacement, displacement)
