@@ -1,0 +1,4 @@
+ChatGPT-4o was used to help generate a high-level code workflow diagram for navigating the structure of the reference code and understanding how the different modules interact.
+ChatGPT-4o was used to draft and refine the README.md file, including writing markdown sections that explain the purpose of each assignment part and provide instructions for running the notebook files.
+ChatGPT-4o was used to improve figure formatting and plot clarity across multiple parts of the assignment by helping label axes, invert x-axes for mesh refinement plots, and export figures in consistent formats.
+ChatGPT-4o was used to debug several error messages related to element types, solver arguments, and plotting issues, and to identify appropriate fixes.
